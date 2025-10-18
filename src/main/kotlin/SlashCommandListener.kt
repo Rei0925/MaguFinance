@@ -1,7 +1,11 @@
 package com.github.rei0925
 
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
+import net.dv8tion.jda.api.interactions.components.text.TextInput
+import net.dv8tion.jda.api.interactions.components.text.TextInputStyle
+import net.dv8tion.jda.api.interactions.modals.Modal
 import net.dv8tion.jda.api.utils.FileUpload
 import org.knowm.xchart.BitmapEncoder
 import org.knowm.xchart.BitmapEncoder.BitmapFormat
@@ -18,6 +22,32 @@ class SlashCommandListener : ListenerAdapter() {
                     "${company.name}｜${"%.2f".format(company.stockPrice)}円"
                 }
                 event.reply("現在の株価一覧:\n$prices").queue()
+            }
+
+            "report" -> {
+                val typeInput = TextInput.create("type", "種類", TextInputStyle.SHORT)
+                    .setPlaceholder("Chat, Cheat(荒し)などから選んでください")
+                    .setRequired(true)
+                    .build()
+                val targetInput = TextInput.create("target", "対象", TextInputStyle.SHORT)
+                    .setPlaceholder("MessageID または相手のユーザー名を入力してください")
+                    .setRequired(true)
+                    .build()
+                val reasonInput = TextInput.create("reason", "理由", TextInputStyle.PARAGRAPH)
+                    .setPlaceholder("理由")
+                    .setRequired(true)
+                    .build()
+                val fromInput = TextInput.create("from", "場所", TextInputStyle.SHORT)
+                    .setPlaceholder("DiscordまたはMinecraft")
+                    .setRequired(true)
+                    .build()
+                val modal = Modal.create("report-modal", "通報フォーム")
+                    .addActionRow(typeInput)
+                    .addActionRow(targetInput)
+                    .addActionRow(reasonInput)
+                    .addActionRow(fromInput)
+                    .build()
+                event.replyModal(modal).queue()
             }
 
             "stok-history" -> {
@@ -94,6 +124,19 @@ class SlashCommandListener : ListenerAdapter() {
                     file.delete()
                 }
             }
+        }
+    }
+
+    override fun onModalInteraction(event: ModalInteractionEvent) {
+        if (event.modalId == "report-modal") {
+            val type = event.getValue("type")?.asString ?: ""
+            val target = event.getValue("target")?.asString ?: ""
+            val reason = event.getValue("reason")?.asString ?: ""
+            val from = event.getValue("from")?.asString ?: ""
+            val sender = event.user.name
+            // Assuming ReportSystem.report(type, sender, target, reason) exists
+            ReportSystem.report(type, sender, target, reason, from)
+            event.reply("通報を受け付けました。ご協力ありがとうございます。通報Idは要望があれば内閣から伝達します。").setEphemeral(true).queue()
         }
     }
 }

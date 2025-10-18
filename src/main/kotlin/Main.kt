@@ -3,14 +3,15 @@ package com.github.rei0925
 import io.github.cdimascio.dotenv.dotenv
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Activity
+import net.dv8tion.jda.api.interactions.commands.Command
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.Commands
 import org.jline.reader.LineReaderBuilder
 import org.jline.reader.impl.completer.StringsCompleter
 import org.jline.reader.impl.history.DefaultHistory
+import java.util.*
 import kotlin.concurrent.fixedRateTimer
 import kotlin.random.Random
-import java.util.Timer
 import kotlin.system.exitProcess
 
 lateinit var statusUpdater: Timer
@@ -21,7 +22,7 @@ fun main() {
 
     val token = dotenv()["DISCORD_TOKEN"] ?: error("Token not found")
     val jda = JDABuilder.createDefault(token)
-        .setActivity(Activity.playing("国税庁｜㍿まぐシス｜企業システムを起動中"))
+        .setActivity(Activity.playing("MaguSystem｜MaguFinanceを起動中"))
         .addEventListeners(SlashCommandListener())
         .build()
     jda.awaitReady()
@@ -32,12 +33,14 @@ fun main() {
         .addCommands(
             Commands.slash("stok-price", "株価を表示します"),
             Commands.slash("stok-history", "株価の履歴を表示します")
-                .addOption(OptionType.STRING, "company", "会社名を指定すると、その会社の履歴だけ表示します", false)
+                .addOption(OptionType.STRING, "company", "会社名を指定すると、その会社の履歴だけ表示します", false),
+            Commands.slash("broad-cast-ch", "MaguFinanceのお知らせを投稿するチャンネルを指定します")
+                .addOption(OptionType.CHANNEL, "channel", "チャンネルを指定してください")
         )
         .queue()
 
     // ステータス更新
-    jda.presence.activity = Activity.playing("開発｜㍿まぐシステム")
+    jda.presence.activity = Activity.playing("開発｜まぐシステム")
 
     var companyIndex = 0
     statusUpdater = fixedRateTimer("StatusUpdater", daemon = true, initialDelay = 5000L, period = 5000L) {
@@ -48,7 +51,7 @@ fun main() {
         val idx = (companyIndex + 1) % (1 + 1 + CompanyManager.getCompanies().size)
         companyIndex = idx
         val newStatus = when (idx) {
-            0 -> "国税庁｜企業システム"
+            0 -> "MaguFinance｜企業システム"
             1 -> {
                 val companies = CompanyManager.getCompanies()
                 if (companies.isEmpty()) {
@@ -111,7 +114,7 @@ fun main() {
                 println("Bot を終了します...")
 
                 // ステータスを一時的に変更
-                jda.presence.activity = Activity.playing("国税庁｜システム終了中")
+                jda.presence.activity = Activity.playing("MaguFinance｜システム終了中")
 
                 // 5秒待機
                 /** Thread.sleep(5000) **/
@@ -129,6 +132,7 @@ fun main() {
                 }
                 try {
                     RealTimeChart4.stop()
+                    UnifiedTicker.stop()
                 } catch (e: Exception) {
                     println("RealTimeChart4.stop() でエラー: ${e.message}")
                 }
@@ -207,8 +211,12 @@ fun main() {
             }
             "ticker" -> {
                 when (tokens.getOrNull(1)?.lowercase()) {
-                    "start" -> NewsTicker.start()
-                    "stop" -> NewsTicker.stop()
+                    "start" -> UnifiedTicker.start()
+                    "start2" -> {
+                        RealTimeChart4.start()
+                        UnifiedTicker.start()
+                    }
+                    "stop" -> UnifiedTicker.stop()
                     else -> println("使い方: ticker start|stop")
                 }
             }

@@ -15,12 +15,8 @@ import javax.swing.JPanel
 import javax.swing.SwingUtilities
 import javax.swing.Timer
 import kotlin.collections.flatMap
-import kotlin.collections.get
 
 class RealTimeChart4() {
-
-    private val lastTickerPrices = mutableMapOf<String, Int>()
-    private var lastAveragePrice = 0
 
     private val tickerPanel = TickerPanel().apply {
         font = Font("SansSerif", Font.BOLD, 16)
@@ -29,7 +25,6 @@ class RealTimeChart4() {
         isOpaque = true
         preferredSize = Dimension(0, 30)
     }
-    private var tickerTimer: Timer? = null
     private val tickerExecutor = Executors.newSingleThreadScheduledExecutor()
 
     private var chart3CompanyName: String = ""
@@ -172,8 +167,6 @@ class RealTimeChart4() {
             // Find min/max for y-axis scaling for chart1 and chart2
             val chart1YMin = if (avgYData.isNotEmpty()) avgYData.minOrNull() else null
             val chart1YMax = if (avgYData.isNotEmpty()) avgYData.maxOrNull() else null
-            val chart2YMin = chart1YMin
-            val chart2YMax = chart1YMax
 
             SwingUtilities.invokeLater {
                 chart1.seriesMap.clear()
@@ -204,9 +197,9 @@ class RealTimeChart4() {
                     avgSeries.lineColor = avgColor
                     avgSeries.markerColor = avgColor
                     companyColors["国内平均"] = avgColor
-                    if (chart2YMin != null && chart2YMax != null) {
-                        chart2.styler.yAxisMin = chart2YMin * 0.98
-                        chart2.styler.yAxisMax = chart2YMax * 1.02
+                    if (chart1YMin != null && chart1YMax != null) {
+                        chart2.styler.yAxisMin = chart1YMin * 0.98
+                        chart2.styler.yAxisMax = chart1YMax * 1.02
                     }
                 }
                 if (!companyColors.containsKey("国内平均")) {
@@ -256,10 +249,8 @@ class RealTimeChart4() {
 
     private fun startTicker() {
         val x = frame.width
-        // snapshot of previous prices
         val snapshotPrices = CompanyManager.companyList.associate { it.name to it.stockPrice.toInt() }.toMutableMap()
         val snapshotAvg = HistoryManager.getAverageHistory().lastOrNull()?.averagePrice?.toInt() ?: 0
-
         tickerMode = "stocks"
         tickerExecutor.submit {
             val textParts = buildStockText(snapshotPrices, snapshotAvg)
@@ -269,59 +260,52 @@ class RealTimeChart4() {
                 tickerPanel.repaint()
             }
         }
-
-        val fps = 144
-
-        tickerTimer = Timer((1000 / fps)) {
-            tickerPanel.xPos -= 2
-            if (tickerPanel.xPos + tickerPanel.textWidth < 0) {
-                tickerPanel.xPos = frame.width
-                when (tickerMode) {
-                    "stocks" -> {
-                        tickerExecutor.submit {
-                            val newTextParts = buildStockText(snapshotPrices, snapshotAvg)
-                            val newNewsQueue = NewsManager.getAllNews()
-                            SwingUtilities.invokeLater {
-                                tickerPanel.setText(newTextParts)
-                                tickerPanel.xPos = frame.width
-                                tickerPanel.repaint()
-                                newsQueue = newNewsQueue
-                                newsIndex = 0
-                                tickerMode = if (newsQueue.isNotEmpty()) "news" else "stocks"
-                            }
+        tickerPanel.onScrollEnd = {
+            when (tickerMode) {
+                "stocks" -> {
+                    tickerExecutor.submit {
+                        val newTextParts = buildStockText(snapshotPrices, snapshotAvg)
+                        val newNewsQueue = NewsManager.getAllNews()
+                        SwingUtilities.invokeLater {
+                            tickerPanel.setText(newTextParts)
+                            tickerPanel.xPos = frame.width
+                            tickerPanel.repaint()
+                            newsQueue = newNewsQueue
+                            newsIndex = 0
+                            tickerMode = if (newsQueue.isNotEmpty()) "news" else "stocks"
                         }
                     }
-                    "news" -> {
-                        tickerExecutor.submit {
-                            if (newsQueue.isNotEmpty()) {
-                                val concatenatedNews = newsQueue.joinToString(" \u00A0\u00A0\u00A0\u00A0\u00A0 ") { news -> buildNewsText(news) }
-                                SwingUtilities.invokeLater {
-                                    tickerPanel.setText(concatenatedNews, Color.WHITE)
-                                    tickerPanel.xPos = frame.width
-                                    tickerPanel.repaint()
-                                    tickerMode = "stocks"
-                                }
-                            } else {
-                                SwingUtilities.invokeLater {
-                                    tickerPanel.setText("")
-                                    tickerPanel.xPos = frame.width
-                                    tickerPanel.repaint()
-                                    tickerMode = "stocks"
-                                }
+                }
+                "news" -> {
+                    tickerExecutor.submit {
+                        if (newsQueue.isNotEmpty()) {
+                            val concatenatedNews = newsQueue.joinToString(" \u00A0\u00A0\u00A0\u00A0\u00A0 ") { news -> buildNewsText(news) }
+                            SwingUtilities.invokeLater {
+                                tickerPanel.setText(concatenatedNews, Color.WHITE)
+                                tickerPanel.xPos = frame.width
+                                tickerPanel.repaint()
+                                tickerMode = "stocks"
+                            }
+                        } else {
+                            SwingUtilities.invokeLater {
+                                tickerPanel.setText("")
+                                tickerPanel.xPos = frame.width
+                                tickerPanel.repaint()
+                                tickerMode = "stocks"
                             }
                         }
                     }
                 }
-            } else {
-                tickerPanel.repaint()
             }
         }
-        tickerTimer?.start()
+        TickerSyncManager.registerStockTicker(tickerPanel)
+        TickerSyncManager.start(tickerPanel)
     }
 
     private fun stopTicker() {
-        tickerTimer?.stop()
-        tickerTimer = null
+        TickerSyncManager.stop(tickerPanel)
+        TickerSyncManager.unregisterStockTicker()
+        tickerPanel.onScrollEnd = null
     }
 
     private fun  buildStockText(snapshotPrices: Map<String, Int>, snapshotAvg: Int): List<Pair<String, Color>> {
@@ -380,12 +364,12 @@ class RealTimeChart4() {
         }
     }
 
-    private class TickerPanel : JPanel() {
+    class TickerPanel : JPanel() {
         var textParts: List<Pair<String, Color>> = emptyList()
-            private set
         var xPos: Int = 0
         var textWidth: Int = 0
         private var fontMetrics: FontMetrics? = null
+        var onScrollEnd: (() -> Unit)? = null
 
         fun setText(textParts: List<Pair<String, Color>>) {
             this.textParts = textParts

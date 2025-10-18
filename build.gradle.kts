@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "2.2.0"
     id("com.gradleup.shadow") version "8.3.0"
+    id("org.openrewrite.rewrite") version "7.11.0"
     kotlin("plugin.serialization") version "1.9.0"
     kotlin("kapt") version "1.9.0" // 必要なら
     application
@@ -17,7 +18,7 @@ dependencies {
     testImplementation(kotlin("test"))
 
     // Discord Bot (JDA)
-    implementation("net.dv8tion:JDA:5.0.0-beta.20")
+    implementation("net.dv8tion:JDA:6.0.0")
 
     // Kotlinx
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
@@ -41,6 +42,10 @@ dependencies {
 
 application {
     mainClass.set("com.github.rei0925.MainKt") // MainKt を指定
+}
+
+rewrite {
+    activeRecipe("net.dv8tion.MigrateComponentsV2")
 }
 
 tasks {
