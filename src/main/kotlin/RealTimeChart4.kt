@@ -16,7 +16,11 @@ import javax.swing.SwingUtilities
 import javax.swing.Timer
 import kotlin.collections.flatMap
 
-class RealTimeChart4() {
+class RealTimeChart4(
+    private val companyManager: CompanyManager,
+    private val historyManager: HistoryManager,
+    private val newsManager: NewsManager
+) {
 
     private val tickerPanel = TickerPanel().apply {
         font = Font("SansSerif", Font.BOLD, 16)
@@ -92,7 +96,7 @@ class RealTimeChart4() {
             timer?.start()
         }
         if (companyCycleTimer == null) {
-            val companies = CompanyManager.companyList.map { it.name }
+            val companies = companyManager.companyList.map { it.name }
             val companyPairs = companies.chunked(2)
             var currentPairIndex = 0
 
@@ -140,13 +144,13 @@ class RealTimeChart4() {
     private fun updateData() {
         tickerExecutor.submit {
             // chart1: 全社
-            val companies = CompanyManager.companyList
+            val companies = companyManager.companyList
             // Prepare data for all companies and for average
             val chart1SeriesData = mutableListOf<Triple<String, List<Date>, List<Number>>>()
             val chart1Colors = mutableMapOf<String, Color>()
             val allCompanyNames = (companies.map { it.name } + listOf(chart3CompanyName, chart4CompanyName)).distinct()
             allCompanyNames.forEach { name ->
-                val entries = HistoryManager.getStockHistory(name).takeLast(50)
+                val entries = historyManager.getStockHistory(name).takeLast(50)
                 if (entries.isNotEmpty()) {
                     val xData = entries.map { Date(it.timestamp) }
                     val yData = entries.map { it.stockPrice }
@@ -157,7 +161,7 @@ class RealTimeChart4() {
                 }
             }
             // Average series for chart1 and chart2
-            val avgEntries = HistoryManager.getAverageHistory().takeLast(50)
+            val avgEntries = historyManager.getAverageHistory().takeLast(50)
             val avgXData = avgEntries.map { Date(it.timestamp) }
             val avgYData = avgEntries.map { it.averagePrice }
             val avgColor = Color.MAGENTA
@@ -215,7 +219,7 @@ class RealTimeChart4() {
 
     private fun updateSingleCompany(chart: XYChart, companyName: String) {
         tickerExecutor.submit {
-            val entries = HistoryManager.getStockHistory(companyName).takeLast(50)
+            val entries = historyManager.getStockHistory(companyName).takeLast(50)
             val xData = entries.map { Date(it.timestamp) }
             val yData = entries.map { it.stockPrice }
             val color = companyColors[companyName] ?: availableColors[0]
@@ -249,8 +253,8 @@ class RealTimeChart4() {
 
     private fun startTicker() {
         val x = frame.width
-        val snapshotPrices = CompanyManager.companyList.associate { it.name to it.stockPrice.toInt() }.toMutableMap()
-        val snapshotAvg = HistoryManager.getAverageHistory().lastOrNull()?.averagePrice?.toInt() ?: 0
+        val snapshotPrices = companyManager.companyList.associate { it.name to it.stockPrice.toInt() }.toMutableMap()
+        val snapshotAvg = historyManager.getAverageHistory().lastOrNull()?.averagePrice?.toInt() ?: 0
         tickerMode = "stocks"
         tickerExecutor.submit {
             val textParts = buildStockText(snapshotPrices, snapshotAvg)
@@ -265,7 +269,7 @@ class RealTimeChart4() {
                 "stocks" -> {
                     tickerExecutor.submit {
                         val newTextParts = buildStockText(snapshotPrices, snapshotAvg)
-                        val newNewsQueue = NewsManager.getAllNews()
+                        val newNewsQueue = newsManager.getAllNews()
                         SwingUtilities.invokeLater {
                             tickerPanel.setText(newTextParts)
                             tickerPanel.xPos = frame.width
@@ -309,7 +313,7 @@ class RealTimeChart4() {
     }
 
     private fun  buildStockText(snapshotPrices: Map<String, Int>, snapshotAvg: Int): List<Pair<String, Color>> {
-        val avg = HistoryManager.getAverageHistory().lastOrNull()?.averagePrice?.toInt() ?: snapshotAvg
+        val avg = historyManager.getAverageHistory().lastOrNull()?.averagePrice?.toInt() ?: snapshotAvg
         val avgDiff = avg - snapshotAvg
         val avgColor = when {
             avgDiff > 0 -> Color.RED
@@ -326,7 +330,7 @@ class RealTimeChart4() {
         parts.add("$avgArrow " to avgColor)
         parts.add("｜" to Color.WHITE)
 
-        CompanyManager.companyList.forEachIndexed { index, company ->
+        companyManager.companyList.forEachIndexed { index, company ->
             val oldPrice = snapshotPrices[company.name] ?: company.stockPrice.toInt()
             val diff = company.stockPrice.toInt() - oldPrice
             val diffColor = when {
@@ -338,7 +342,7 @@ class RealTimeChart4() {
             val diffText = if (diff != 0) (if (diff > 0) "+${kotlin.math.abs(diff)}" else "-${kotlin.math.abs(diff)}") else "0"
             parts.add(mainText to Color.WHITE)
             parts.add(diffText to diffColor)
-            if (index < CompanyManager.companyList.size - 1) {
+            if (index < companyManager.companyList.size - 1) {
                 parts.add("｜" to Color.WHITE)
             }
         }
@@ -351,9 +355,9 @@ class RealTimeChart4() {
     companion object {
         private var instance: RealTimeChart4? = null
 
-        fun start() {
+        fun start(companyManager: CompanyManager,historyManager: HistoryManager,newsManager: NewsManager) {
             if (instance == null) {
-                instance = RealTimeChart4()
+                instance = RealTimeChart4(companyManager,historyManager,newsManager)
                 instance?.start()
             }
         }

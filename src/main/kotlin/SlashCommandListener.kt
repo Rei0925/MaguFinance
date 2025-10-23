@@ -1,31 +1,46 @@
 package com.github.rei0925
 
+import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.components.actionrow.ActionRow
+import net.dv8tion.jda.api.components.buttons.Button
+import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
-import net.dv8tion.jda.api.interactions.components.text.TextInput
-import net.dv8tion.jda.api.interactions.components.text.TextInputStyle
-import net.dv8tion.jda.api.interactions.modals.Modal
 import net.dv8tion.jda.api.utils.FileUpload
 import org.knowm.xchart.BitmapEncoder
 import org.knowm.xchart.BitmapEncoder.BitmapFormat
 import org.knowm.xchart.XYChartBuilder
 import org.knowm.xchart.style.markers.SeriesMarkers
+import java.awt.Color
 import java.io.File
 import java.util.*
 
-class SlashCommandListener : ListenerAdapter() {
+class SlashCommandListener(
+    private val jda: JDA,
+    private val companyManager: CompanyManager,
+    private val historyManager: HistoryManager,
+    private val broadCast: BroadCast,
+    private val bankManager: BankManager
+) : ListenerAdapter() {
+
+    val tempMessages = mutableMapOf<Long, Message>()
+
     override fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
         when (event.name) {
             "stok-price" -> {
-                val prices = CompanyManager.companyList.joinToString("\n") { company ->
+                val prices = companyManager.companyList.joinToString("\n") { company ->
                     "${company.name}｜${"%.2f".format(company.stockPrice)}円"
                 }
                 event.reply("現在の株価一覧:\n$prices").queue()
             }
 
+            /**
             "report" -> {
-                val typeInput = TextInput.create("type", "種類", TextInputStyle.SHORT)
+                val typeInput = TextInput.create("type", TextInputStyle.SHORT)
+                    .setPlaceholder("種類")
                     .setPlaceholder("Chat, Cheat(荒し)などから選んでください")
                     .setRequired(true)
                     .build()
@@ -42,6 +57,7 @@ class SlashCommandListener : ListenerAdapter() {
                     .setRequired(true)
                     .build()
                 val modal = Modal.create("report-modal", "通報フォーム")
+                    .addComponents(typeInput)
                     .addActionRow(typeInput)
                     .addActionRow(targetInput)
                     .addActionRow(reasonInput)
@@ -49,10 +65,67 @@ class SlashCommandListener : ListenerAdapter() {
                     .build()
                 event.replyModal(modal).queue()
             }
+            */
+
+            "broad-cast" -> {
+                val ch = event.getOption("channel")?.asChannel?.let { jda.getTextChannelById(it.id) }
+                if (ch == null){
+                    event.reply("エラーが発生しました。\nそのチャンネルは存在しません").queue()
+                    return
+                }
+                val embed = EmbedBuilder()
+                    .setTitle("お知らせチャンネルに設定されました")
+                    .setDescription("MaguFinanceのお知らせ情報がこれからここに送信されます。")
+                    .setColor(Color.GREEN)
+                    .setFooter("MaguFinance")
+                    .build()
+                event.reply("お知らせチャンネルを${ch.jumpUrl}に設定しました").queue()
+                broadCast.registerBroadcastChannel(ch.guild.idLong,ch.idLong)
+                ch.sendMessageEmbeds(embed).queue()
+            }
+
+            "atm" -> {
+                when (event.subcommandName){
+                    "balance" ->{
+                        val user = event.user
+                        val bal = bankManager.getBalance(user.idLong)
+                        if (bal == -1.0){
+                            val embed = EmbedBuilder()
+                                .setTitle("口座が存在しません")
+                                .setDescription("新規口座を開設しますか？")
+                                .setColor(Color.RED)
+                                .setFooter("MaguFinance")
+                                .build()
+
+                            val doneButton: Button = Button.success("ac_done", "開設")
+                            val cancelButton = Button.danger("ac_cancel", "キャンセル")
+                            event.replyEmbeds(embed)
+                                .addComponents(ActionRow.of(doneButton, cancelButton))
+                                .setEphemeral(true)
+                                .queue { hook ->
+                                    hook.retrieveOriginal().queue { message ->
+                                        tempMessages[event.user.idLong] = message
+                                    }
+                                }
+
+                            return
+                        }
+                        val embed = EmbedBuilder()
+                            .setTitle("残高情報")
+                            .addField("残高","¥$bal",false)
+                            .setColor(Color.GREEN)
+                            .setTimestamp(java.time.OffsetDateTime.now())
+                            .setFooter("MaguFinance")
+                            .build()
+
+                        event.replyEmbeds(embed).setEphemeral(true).queue()
+                    }
+                }
+            }
 
             "stok-history" -> {
                 val companyName = event.getOption("company")?.asString
-                val history = HistoryManager.getHistory()
+                val history = historyManager.getHistory()
 
                 if (history.isEmpty()) {
                     event.reply("履歴がまだありません。").queue()
@@ -107,7 +180,7 @@ class SlashCommandListener : ListenerAdapter() {
                         series.marker = SeriesMarkers.CIRCLE
                     }
                     // Add domestic average series
-                    val avgHistory = HistoryManager.getAverageHistory().takeLast(50)
+                    val avgHistory = historyManager.getAverageHistory().takeLast(50)
                     if (avgHistory.isNotEmpty()) {
                         val avgTimestamps = avgHistory.map { Date(it.timestamp) }
                         val avgPrices = avgHistory.map { it.averagePrice }
@@ -123,6 +196,31 @@ class SlashCommandListener : ListenerAdapter() {
                 event.replyFiles(FileUpload.fromData(file)).queue {
                     file.delete()
                 }
+            }
+        }
+    }
+
+    override fun onButtonInteraction(event: ButtonInteractionEvent) {
+        when (event.componentId) {
+            "ac_done" -> {
+                val user = event.user
+                bankManager.createAccount(user.idLong)
+                val embed = EmbedBuilder()
+                    .setTitle("新規口座を開設しました")
+                    .addField("口座ID", user.id, true)
+                    .addField("所持金", "¥${com.github.rei0925.bankManager.getBalance(user.idLong)}" , true)
+                    .setColor(Color.BLUE)
+                    .setFooter("MaguFinance")
+                    .setTimestamp(java.time.OffsetDateTime.now())
+                    .build()
+
+                // 元のメッセージを編集して埋め込みに置き換え、ボタンは消す
+                val originalMessage = tempMessages[user.idLong] ?: return
+                originalMessage.editMessageEmbeds(embed)
+                    .setComponents()
+                    .queue()
+
+                tempMessages.remove(user.idLong)
             }
         }
     }

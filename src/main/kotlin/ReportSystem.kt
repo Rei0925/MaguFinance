@@ -1,35 +1,19 @@
 package com.github.rei0925
 
-import net.dv8tion.jda.api.JDA
-
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.StandardOpenOption
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import net.dv8tion.jda.api.EmbedBuilder
-import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent
-import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
+import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.components.actionrow.ActionRow
+import net.dv8tion.jda.api.components.buttons.Button
 import net.dv8tion.jda.api.hooks.ListenerAdapter
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
-import net.dv8tion.jda.api.interactions.components.buttons.Button
-import net.dv8tion.jda.api.interactions.components.text.TextInput
-import net.dv8tion.jda.api.interactions.components.text.TextInputStyle
-import net.dv8tion.jda.api.interactions.modals.Modal
-import java.awt.Color
-import java.io.File
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.collections.forEach
 
 @Serializable
 data class ReportEntry(
@@ -88,8 +72,8 @@ object ReportSystem {
          * from     -> 場所(Discord or Minecraft)
          */
         if (this::jda.isInitialized && this::reportChannelId.isInitialized) {
-            val channel = jda.getTextChannelById(1409518811274809394)
-            channel?.sendMessage("<@&1385726863275720854>新規通報が作成されました")?.queue {
+            val channel = jda.getTextChannelById(1409761887364710500)
+            channel?.sendMessage("新規通報が作成されました")?.queue {
                 val embed = EmbedBuilder()
                     .setTitle("新規通報情報")
                     .addField("Type", type, false)
@@ -112,10 +96,10 @@ object ReportSystem {
                 }
                 embed.setTimestamp(OffsetDateTime.now(ZoneOffset.UTC))
                 embed.setFooter("Sender: $sender")
-                val doneButton = Button.success("report_done_$counter", "対応完了")
+                val doneButton: Button = Button.success("report_done_$counter", "対応完了")
                 val cancelButton = Button.danger("report_cancel_$counter", "対応中止")
                 channel.sendMessageEmbeds(embed.build())
-                    .setActionRow(doneButton, cancelButton)
+                    .setComponents(ActionRow.of(doneButton, cancelButton))
                     .queue { message ->
                         val entry = ReportEntry(
                             id = counter,
@@ -136,7 +120,7 @@ object ReportSystem {
     }
 }
 
-class ReportButton() : ListenerAdapter() {
+class ReportButton : ListenerAdapter() {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     private lateinit var reportFile: File
 
@@ -147,41 +131,34 @@ class ReportButton() : ListenerAdapter() {
             reportFile.createNewFile()
         }
     }
-
+    /**
     override fun onButtonInteraction(event: ButtonInteractionEvent) {
-        val buttonId = event.button.id ?: return
-        val (prefix, newStatus, replyMessage, embedTitle) = when {
-            buttonId.startsWith("report_done_") -> Quad("report_done_", "DONE", "通報 %s の対応完了", "対応完了")
-            buttonId.startsWith("report_cancel_") -> Quad("report_cancel_", "CANCELED", "通報 %s の対応を中止しました", "対応中止")
+        val buttonId = event.componentId
+        val (prefix, newStatus) = when {
+            buttonId.startsWith("report_done_") -> "report_done_" to "DONE"
+            buttonId.startsWith("report_cancel_") -> "report_cancel_" to "CANCELED"
             else -> return
         }
         val reportIdStr = buttonId.removePrefix(prefix)
 
-        // Show modal based on button type
         val modal = when (prefix) {
             "report_done_" -> {
-                val input = TextInput.create("handling_content", "対応内容", TextInputStyle.PARAGRAPH)
+                val input : TextInput.Builder = TextInput.create("handling_content", TextInputStyle.PARAGRAPH)
                     .setPlaceholder("対応内容を入力してください")
                     .setRequired(true)
-                    .build()
                 Modal.create("modal_done_$reportIdStr", "対応内容を入力してください")
-                    .addActionRows(net.dv8tion.jda.api.interactions.components.ActionRow.of(input))
-                    .build()
+                    .addComponents(input)
             }
             "report_cancel_" -> {
-                val input = TextInput.create("cancel_reason", "中止理由", TextInputStyle.PARAGRAPH)
+                val input = TextInput.create("cancel_reason",  TextInputStyle.PARAGRAPH)
                     .setPlaceholder("中止理由を入力してください")
                     .setRequired(true)
-                    .build()
                 Modal.create("modal_cancel_$reportIdStr", "中止理由を入力してください")
-                    .addActionRows(net.dv8tion.jda.api.interactions.components.ActionRow.of(input))
-                    .build()
+                    .addComponents(input)
             }
             else -> null
         }
-        if (modal != null) {
-            event.replyModal(modal).queue()
-        }
+        modal?.let { event.replyModal(it).queue() }
     }
 
     override fun onModalInteraction(event: ModalInteractionEvent) {
@@ -192,8 +169,7 @@ class ReportButton() : ListenerAdapter() {
             else -> return
         }
         val reportIdStr = modalId.removePrefix(prefix)
-        val reportId = reportIdStr.toIntOrNull()
-        if (reportId == null) {
+        val reportId = reportIdStr.toIntOrNull() ?: run {
             event.reply("無効な通報IDです").setEphemeral(true).queue()
             return
         }
@@ -203,30 +179,22 @@ class ReportButton() : ListenerAdapter() {
             "CANCELED" -> event.getValue("cancel_reason")?.asString
             else -> null
         }
+
         if (inputContent.isNullOrBlank()) {
             event.reply("入力内容が空です。").setEphemeral(true).queue()
             return
         }
 
-        // Read all reports and find the matching one
         val lines = if (::reportFile.isInitialized && reportFile.exists()) reportFile.readLines() else emptyList()
-        var targetReport: JsonObject? = null
-
-        for (line in lines) {
-            val jsonObj = try { json.parseToJsonElement(line).jsonObject } catch (_: Exception) { null }
-            val id = jsonObj?.get("id")?.jsonPrimitive?.intOrNull
-            if (id == reportId) {
-                targetReport = jsonObj
-                break
-            }
-        }
+        val targetReport = lines.mapNotNull { line ->
+            try { json.parseToJsonElement(line).jsonObject } catch (_: Exception) { null }
+        }.firstOrNull { it["id"]?.jsonPrimitive?.intOrNull == reportId }
 
         if (targetReport == null) {
             event.reply("通報 $reportId が見つかりませんでした").setEphemeral(true).queue()
             return
         }
 
-        // Update status, handledBy, and add handlingContent or cancelReason
         val updatedReport = buildJsonObject {
             targetReport.forEach { (k, v) -> put(k, v) }
             put("status", JsonPrimitive(newStatus))
@@ -237,88 +205,52 @@ class ReportButton() : ListenerAdapter() {
             }
         }
         val updatedLine = json.encodeToString(JsonObject.serializer(), updatedReport)
-        // Overwrite the relevant line in the file
         val updatedLines = lines.map { line ->
             val jsonObj = try { json.parseToJsonElement(line).jsonObject } catch (_: Exception) { null }
-            val id = jsonObj?.get("id")?.jsonPrimitive?.intOrNull
-            if (id == reportId) updatedLine else line
+            if (jsonObj?.get("id")?.jsonPrimitive?.intOrNull == reportId) updatedLine else line
         }
         reportFile.writeText(updatedLines.joinToString("\n") + if (updatedLines.isNotEmpty()) "\n" else "")
 
-        // Get messageId and fetch message
         val messageId = updatedReport["messageId"]?.jsonPrimitive?.contentOrNull
         if (messageId == null) {
             event.reply("通報 $reportId のメッセージIDが見つかりませんでした").setEphemeral(true).queue()
             return
         }
-        val channel = event.channel
-        channel.retrieveMessageById(messageId).queue({ message ->
+
+        event.channel.retrieveMessageById(messageId).queue({ message ->
             val oldEmbed = message.embeds.firstOrNull()
-            val embedBuilder = if (oldEmbed != null) EmbedBuilder(oldEmbed) else EmbedBuilder()
+            val embedBuilder = EmbedBuilder(oldEmbed)
             val embedTitle = when (newStatus) {
                 "DONE" -> "対応完了"
                 "CANCELED" -> "対応中止"
                 else -> ""
             }
             embedBuilder.setTitle(embedTitle)
-            // Set color based on status
-            when (newStatus) {
-                "DONE" -> embedBuilder.setColor(Color.GREEN)
-                "CANCELED" -> embedBuilder.setColor(Color.RED)
-            }
+            embedBuilder.setColor(if (newStatus == "DONE") Color.GREEN else Color.RED)
             embedBuilder.addField("対応者", event.user.name, false)
             when (newStatus) {
                 "DONE" -> embedBuilder.addField("対応内容", inputContent, false)
                 "CANCELED" -> embedBuilder.addField("中止理由", inputContent, false)
             }
-            message.editMessageEmbeds(embedBuilder.build()).queue {
-                // After editing the original embed, send the new summary embed
-                val summaryEmbed = EmbedBuilder()
-                val summaryTitle = when (newStatus) {
-                    "DONE" -> "対応 完了しました"
-                    "CANCELED" -> "対応 中止しました"
-                    else -> ""
+            message.editMessageEmbeds(embedBuilder.build()).queue()
+
+            val disabledRows = message.actionRows.map { row ->
+                val disabledButtons = row.components.mapNotNull { comp ->
+                    if (comp is Button) comp.asDisabled() else null
                 }
-                val description = when (newStatus) {
-                    "DONE" -> "通報Id$reportId でご報告いただいた件について対応が完了しました。"
-                    "CANCELED" -> "通報Id$reportId でご報告いただいた件について対応が中止されました。"
-                    else -> ""
-                }
-                val color = when (newStatus) {
-                    "DONE" -> Color.GREEN
-                    "CANCELED" -> Color.RED
-                    else -> null
-                }
-                summaryEmbed.setTitle(summaryTitle)
-                summaryEmbed.setDescription(description)
-                summaryEmbed.addField("内容", inputContent, false)
-                summaryEmbed.setFooter("以上の通りでこの報告の対応を終了いたしました。")
-                color?.let { summaryEmbed.setColor(it) }
-                channel.sendMessageEmbeds(summaryEmbed.build()).queue()
+                net.dv8tion.jda.api.interactions.components.ActionRow.of(disabledButtons)
             }
+            message.editMessageComponents(disabledRows).queue()
+
+            val replyMsg = when (newStatus) {
+                "DONE" -> "通報 %s の対応完了"
+                "CANCELED" -> "通報 %s の対応を中止しました"
+                else -> ""
+            }
+            event.reply(String.format(replyMsg, reportId)).setEphemeral(true).queue()
         }, {
             event.reply("通報 $reportId のメッセージを取得できませんでした").setEphemeral(true).queue()
-            return@queue
         })
-
-        // Disable all buttons in the message's action rows instead of removing them
-        val message = event.message
-        val disabledActionRows = message?.actionRows?.map { row ->
-            val disabledButtons = row.components.mapNotNull { comp ->
-                if (comp is net.dv8tion.jda.api.interactions.components.buttons.Button) comp.asDisabled() else null
-            }
-            net.dv8tion.jda.api.interactions.components.ActionRow.of(disabledButtons)
-        }
-
-        disabledActionRows?.let { message.editMessageComponents(it) }?.queue()
-
-        val replyMessage = when (newStatus) {
-            "DONE" -> "通報 %s の対応完了"
-            "CANCELED" -> "通報 %s の対応を中止しました"
-            else -> ""
-        }
-        event.reply(String.format(replyMessage, reportId)).setEphemeral(true).queue()
     }
-
-    private data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
+    */
 }

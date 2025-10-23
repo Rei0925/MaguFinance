@@ -11,7 +11,10 @@ import javax.swing.SwingUtilities
  * mimicking the RealTimeChart4 ticker layout, color logic, and scroll behavior.
  */
 class UnifiedTicker private constructor(
-    private val newsList: List<News> = NewsManager.getAllNews(),
+    private val newsManager: NewsManager,
+    private val historyManager: HistoryManager,
+    private val companyManager: CompanyManager,
+    private val newsList: List<News> = newsManager.getAllNews(),
     private val textColor: Color = Color.WHITE,
     private val backgroundColor: Color = Color.BLACK
 ) {
@@ -46,7 +49,7 @@ class UnifiedTicker private constructor(
     private fun buildStockText(): List<Pair<String, Color>> {
         val parts = mutableListOf<Pair<String, Color>>()
         // 国内平均
-        val avg = HistoryManager.getAverageHistory().lastOrNull()?.averagePrice?.toInt() ?: snapshotAvg
+        val avg = historyManager.getAverageHistory().lastOrNull()?.averagePrice?.toInt() ?: snapshotAvg
         val avgDiff = avg - snapshotAvg
         val avgColor = when {
             avgDiff > 0 -> Color.RED
@@ -62,7 +65,7 @@ class UnifiedTicker private constructor(
         parts.add("$avgArrow " to avgColor)
         parts.add("｜" to Color.WHITE)
         // 各社
-        CompanyManager.companyList.forEachIndexed { index, company ->
+        companyManager.companyList.forEachIndexed { index, company ->
             val oldPrice = snapshotPrices[company.name] ?: company.stockPrice.toInt()
             val diff = company.stockPrice.toInt() - oldPrice
             val diffColor = when {
@@ -74,7 +77,7 @@ class UnifiedTicker private constructor(
             val diffText = if (diff != 0) (if (diff > 0) "+${kotlin.math.abs(diff)}" else "-${kotlin.math.abs(diff)}") else "0"
             parts.add(mainText to Color.WHITE)
             parts.add(diffText to diffColor)
-            if (index < CompanyManager.companyList.size - 1) {
+            if (index < companyManager.companyList.size - 1) {
                 parts.add("｜" to Color.WHITE)
             }
         }
@@ -97,10 +100,10 @@ class UnifiedTicker private constructor(
     private var tickerPanelInitialized = false
 
     private fun startTicker() {
-        if (CompanyManager.companyList.isEmpty() && newsList.isEmpty()) return
+        if (companyManager.companyList.isEmpty() && newsList.isEmpty()) return
         val x = frame.width
-        snapshotPrices = CompanyManager.companyList.associate { it.name to it.stockPrice.toInt() }
-        snapshotAvg = HistoryManager.getAverageHistory().lastOrNull()?.averagePrice?.toInt() ?: 0
+        snapshotPrices = companyManager.companyList.associate { it.name to it.stockPrice.toInt() }
+        snapshotAvg = historyManager.getAverageHistory().lastOrNull()?.averagePrice?.toInt() ?: 0
         tickerMode = "stocks"
 
         // 初回表示は一度だけ
@@ -117,8 +120,8 @@ class UnifiedTicker private constructor(
                     tickerPanel.setTextParts(buildNewsText())
                     tickerMode = "news"
                 } else {
-                    snapshotPrices = CompanyManager.companyList.associate { it.name to it.stockPrice.toInt() }
-                    snapshotAvg = HistoryManager.getAverageHistory().lastOrNull()?.averagePrice?.toInt() ?: 0
+                    snapshotPrices = companyManager.companyList.associate { it.name to it.stockPrice.toInt() }
+                    snapshotAvg = historyManager.getAverageHistory().lastOrNull()?.averagePrice?.toInt() ?: 0
                     tickerPanel.setTextParts(buildStockText())
                     tickerMode = "stocks"
                 }
@@ -168,7 +171,7 @@ class UnifiedTicker private constructor(
             backgroundColor: Color = Color.BLACK
         ) {
             stop()
-            instance = UnifiedTicker(newsList ?: NewsManager.getAllNews(), textColor, backgroundColor)
+            instance = UnifiedTicker(newsManager,historyManager,companyManager,newsList ?: newsManager.getAllNews(), textColor, backgroundColor)
             SwingUtilities.invokeLater {
                 instance?.show()
             }

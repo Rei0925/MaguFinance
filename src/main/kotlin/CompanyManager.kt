@@ -1,11 +1,10 @@
 package com.github.rei0925
 
-import java.io.File
-import kotlinx.serialization.*
-import kotlinx.serialization.json.*
+import java.sql.Connection
+import java.sql.PreparedStatement
+import java.sql.ResultSet
 import kotlin.random.Random
 
-@Serializable
 data class Company(
     val name: String,
     var stockPrice: Double,
@@ -13,26 +12,42 @@ data class Company(
     var availableStocks: Int
 )
 
-object CompanyManager {
-    private val jsonFile = File(System.getProperty("user.dir"), "company.json")
-    private val json = Json { prettyPrint = true }
-    // 変更後
-    val companyList = mutableListOf<Company>()  // 名前を変更
+class CompanyManager(
+    private val connection: Connection
+) {
+    val companyList = mutableListOf<Company>()
 
     init {
+        // テーブルがなければ作成
+        val stmt = connection.createStatement()
+        stmt.executeUpdate("""
+            CREATE TABLE IF NOT EXISTS companies (
+                name VARCHAR(255) PRIMARY KEY,
+                stockPrice DOUBLE NOT NULL,
+                totalStocks INT NOT NULL,
+                availableStocks INT NOT NULL
+            )
+        """.trimIndent())
+        stmt.close()
+
         loadCompanies()
     }
 
     fun loadCompanies() {
-        if (!jsonFile.exists()) {
-            // resources/company.json をコピー
-            val resource = this::class.java.getResource("/company.json")
-                ?: error("company.json not found in resources")
-            jsonFile.writeBytes(resource.readBytes())
-        }
-
         companyList.clear()
-        companyList.addAll(json.decodeFromString<List<Company>>(jsonFile.readText()))
+        val stmt = connection.createStatement()
+        val rs: ResultSet = stmt.executeQuery("SELECT name, stockPrice, totalStocks, availableStocks FROM companies")
+        while (rs.next()) {
+            val company = Company(
+                name = rs.getString("name"),
+                stockPrice = rs.getDouble("stockPrice"),
+                totalStocks = rs.getInt("totalStocks"),
+                availableStocks = rs.getInt("availableStocks")
+            )
+            companyList.add(company)
+        }
+        rs.close()
+        stmt.close()
     }
 
     fun loadOrCreate() {
@@ -40,7 +55,24 @@ object CompanyManager {
     }
 
     fun save() {
-        jsonFile.writeText(json.encodeToString(companyList))
+        val sql = """
+            INSERT INTO companies (name, stockPrice, totalStocks, availableStocks) 
+            VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE 
+                stockPrice = VALUES(stockPrice), 
+                totalStocks = VALUES(totalStocks),
+                availableStocks = VALUES(availableStocks)
+        """.trimIndent()
+        val pstmt: PreparedStatement = connection.prepareStatement(sql)
+        for (company in companyList) {
+            pstmt.setString(1, company.name)
+            pstmt.setDouble(2, company.stockPrice)
+            pstmt.setInt(3, company.totalStocks)
+            pstmt.setInt(4, company.availableStocks)
+            pstmt.addBatch()
+        }
+        pstmt.executeBatch()
+        pstmt.close()
     }
 
     fun createCompany(name: String, stockPrice: Double, totalStocks: Int) {

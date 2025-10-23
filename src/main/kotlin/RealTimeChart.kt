@@ -9,7 +9,10 @@ import java.awt.Color
 import javax.swing.JFrame
 import javax.swing.Timer
 
-class RealTimeChart {
+class RealTimeChart(
+    private val companyManager: CompanyManager,
+    private val historyManager: HistoryManager
+) {
 
     private val maxEntries = 50
     private val chart: XYChart = XYChartBuilder()
@@ -50,11 +53,11 @@ class RealTimeChart {
 
     private fun updateData() {
         chart.seriesMap.clear()
-        val companies = CompanyManager.companyList
+        val companies = companyManager.companyList
         var colorIndex = 0
 
         for (company in companies) {
-            val entries = HistoryManager.getStockHistory(company.name)
+            val entries = historyManager.getStockHistory(company.name)
             val latestEntries = if (entries.size > maxEntries) {
                 entries.takeLast(maxEntries)
             } else {
@@ -83,8 +86,8 @@ class RealTimeChart {
     companion object {
         private var instance: RealTimeChart? = null
 
-        fun start() {
-            instance = RealTimeChart()
+        fun start(companyManager: CompanyManager,historyManager: HistoryManager) {
+            instance = RealTimeChart(companyManager,historyManager)
         }
 
         fun stop() {

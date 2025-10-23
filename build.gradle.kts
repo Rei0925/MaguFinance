@@ -18,7 +18,7 @@ dependencies {
     testImplementation(kotlin("test"))
 
     // Discord Bot (JDA)
-    implementation("net.dv8tion:JDA:6.0.0")
+    implementation("net.dv8tion:JDA:6.1.0")
 
     // Kotlinx
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
@@ -38,6 +38,12 @@ dependencies {
 
     //タブ補完
     implementation("org.jline:jline:3.26.0")
+
+    //DB
+    implementation("org.mariadb.jdbc:mariadb-java-client:3.5.6")
+
+    implementation("org.reflections:reflections:0.10.2")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
 }
 
 application {
