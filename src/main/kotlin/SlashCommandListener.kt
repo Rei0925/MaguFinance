@@ -1,9 +1,9 @@
-package com.github.rei0925
+package com.github.rei0925.magufinance
 
-import com.github.rei0925.command.MaintenanceStatus
-import com.github.rei0925.manager.BankManager
-import com.github.rei0925.manager.CompanyManager
-import com.github.rei0925.manager.HistoryManager
+import com.github.rei0925.magufinance.command.MaintenanceStatus
+import com.github.rei0925.magufinance.manager.BankManager
+import com.github.rei0925.magufinance.manager.CompanyManager
+import com.github.rei0925.magufinance.manager.HistoryManager
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.components.actionrow.ActionRow

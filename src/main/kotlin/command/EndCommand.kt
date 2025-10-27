@@ -1,7 +1,7 @@
-package com.github.rei0925.command
+package com.github.rei0925.magufinance.command
 
-import com.github.rei0925.RealTimeChart4
-import com.github.rei0925.UnifiedTicker
+import com.github.rei0925.magufinance.RealTimeChart4
+import com.github.rei0925.magufinance.UnifiedTicker
 import com.github.rei0925.kotlincli.commands.*
 import net.dv8tion.jda.api.entities.Activity
 import org.slf4j.LoggerFactory

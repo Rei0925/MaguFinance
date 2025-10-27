@@ -1,4 +1,4 @@
-package com.github.rei0925
+package com.github.rei0925.magufinance
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString

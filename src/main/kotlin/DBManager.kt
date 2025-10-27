@@ -1,4 +1,4 @@
-package com.github.rei0925
+package com.github.rei0925.magufinance
 
 import io.github.cdimascio.dotenv.dotenv
 import org.slf4j.LoggerFactory

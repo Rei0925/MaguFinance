@@ -7,8 +7,8 @@ plugins {
     application
 }
 
-group = "com.github.rei0925"
-version = "1.0.1"
+group = "com.github.rei0925.magufinance"
+version = "1.0.2"
 
 repositories {
     mavenCentral()
@@ -52,7 +52,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("com.github.rei0925.MainKt") // MainKt を指定
+    mainClass.set("com.github.rei0925.magufinance.MainKt") // MainKt を指定
 }
 
 rewrite {
@@ -63,7 +63,7 @@ tasks {
     shadowJar {
         archiveClassifier.set("") // fat jar を直接 xxx.jar に
         manifest {
-            attributes["Main-Class"] = "com.github.rei0925.MainKt"
+            attributes["Main-Class"] = "com.github.rei0925.magufinance.MainKt"
         }
     }
 }

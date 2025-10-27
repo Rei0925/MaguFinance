@@ -1,12 +1,12 @@
-package com.github.rei0925.command
+package com.github.rei0925.magufinance.command
 
-import com.github.rei0925.*
-import com.github.rei0925.manager.BankManager
-import com.github.rei0925.manager.CompanyManager
-import com.github.rei0925.manager.HistoryManager
-import com.github.rei0925.manager.MarketManager
-import com.github.rei0925.manager.NewsManager
-import com.github.rei0925.manager.PluginManager
+import com.github.rei0925.magufinance.*
+import com.github.rei0925.magufinance.manager.BankManager
+import com.github.rei0925.magufinance.manager.CompanyManager
+import com.github.rei0925.magufinance.manager.HistoryManager
+import com.github.rei0925.magufinance.manager.MarketManager
+import com.github.rei0925.magufinance.manager.NewsManager
+import com.github.rei0925.magufinance.manager.PluginManager
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel
 import java.io.BufferedReader

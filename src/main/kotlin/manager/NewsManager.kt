@@ -1,4 +1,4 @@
-package com.github.rei0925.manager
+package com.github.rei0925.magufinance.manager
 
 import kotlinx.serialization.Serializable
 import java.sql.Connection

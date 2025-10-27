@@ -1,10 +1,10 @@
-package com.github.rei0925
+package com.github.rei0925.magufinance
 
-import com.github.rei0925.manager.CompanyManager
-import com.github.rei0925.manager.HistoryManager
-import com.github.rei0925.manager.News
-import com.github.rei0925.manager.NewsManager
-import com.github.rei0925.manager.TickerSyncManager
+import com.github.rei0925.magufinance.manager.CompanyManager
+import com.github.rei0925.magufinance.manager.HistoryManager
+import com.github.rei0925.magufinance.manager.News
+import com.github.rei0925.magufinance.manager.NewsManager
+import com.github.rei0925.magufinance.manager.TickerSyncManager
 import java.awt.*
 import javax.swing.JFrame
 import javax.swing.JPanel

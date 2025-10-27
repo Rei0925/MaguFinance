@@ -1,4 +1,4 @@
-package com.github.rei0925.manager
+package com.github.rei0925.magufinance.manager
 
 import java.sql.Connection
 import java.sql.PreparedStatement

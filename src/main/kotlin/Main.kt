@@ -1,16 +1,16 @@
-package com.github.rei0925
+package com.github.rei0925.magufinance
 
-import com.github.rei0925.api.FinanceAPI
-import com.github.rei0925.api.FinanceAPIImpl
-import com.github.rei0925.api.FinancePlugin
-import com.github.rei0925.command.*
+import com.github.rei0925.magufinance.api.FinanceAPI
+import com.github.rei0925.magufinance.api.FinanceAPIImpl
+import com.github.rei0925.magufinance.api.FinancePlugin
+import com.github.rei0925.magufinance.command.*
 import com.github.rei0925.kotlincli.commands.CommandManager
-import com.github.rei0925.manager.BankManager
-import com.github.rei0925.manager.CompanyManager
-import com.github.rei0925.manager.HistoryManager
-import com.github.rei0925.manager.MarketManager
-import com.github.rei0925.manager.NewsManager
-import com.github.rei0925.manager.PluginManager
+import com.github.rei0925.magufinance.manager.BankManager
+import com.github.rei0925.magufinance.manager.CompanyManager
+import com.github.rei0925.magufinance.manager.HistoryManager
+import com.github.rei0925.magufinance.manager.MarketManager
+import com.github.rei0925.magufinance.manager.NewsManager
+import com.github.rei0925.magufinance.manager.PluginManager
 import io.github.cdimascio.dotenv.dotenv
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.Permission
@@ -21,6 +21,7 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.io.File
 import java.util.*
 import kotlin.concurrent.fixedRateTimer
 import kotlin.random.Random
@@ -39,7 +40,20 @@ lateinit var financeAPIImpl: FinanceAPIImpl
 
 val logger: Logger = LoggerFactory.getLogger("MaguFinance")
 
+fun createPluginsFolder() {
+    val pluginsDir = File("plugins")
+    if (!pluginsDir.exists()) {
+        val created = pluginsDir.mkdirs()
+        if (created) {
+            println("pluginsフォルダを作成しました")
+        } else {
+            println("pluginsフォルダの作成に失敗しました")
+        }
+    }
+}
+
 fun main() {
+    createPluginsFolder()
     val dbManager = DBManager()      // インスタンス化
     val connection = dbManager.connect()
     companyManager = CompanyManager(connection)

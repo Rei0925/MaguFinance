@@ -1,6 +1,6 @@
-package com.github.rei0925
+package com.github.rei0925.magufinance
 
-import com.github.rei0925.manager.CompanyManager
+import com.github.rei0925.magufinance.manager.CompanyManager
 import java.sql.Connection
 
 data class PlayerStock(

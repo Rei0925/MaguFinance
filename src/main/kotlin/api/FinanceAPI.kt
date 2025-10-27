@@ -1,11 +1,11 @@
-package com.github.rei0925.api
+package com.github.rei0925.magufinance.api
 
-import com.github.rei0925.manager.BankManager
-import com.github.rei0925.manager.CompanyManager
-import com.github.rei0925.DBManager
-import com.github.rei0925.manager.HistoryManager
-import com.github.rei0925.manager.MarketManager
-import com.github.rei0925.manager.NewsManager
+import com.github.rei0925.magufinance.manager.BankManager
+import com.github.rei0925.magufinance.manager.CompanyManager
+import com.github.rei0925.magufinance.DBManager
+import com.github.rei0925.magufinance.manager.HistoryManager
+import com.github.rei0925.magufinance.manager.MarketManager
+import com.github.rei0925.magufinance.manager.NewsManager
 import net.dv8tion.jda.api.JDA
 
 interface FinanceAPI {

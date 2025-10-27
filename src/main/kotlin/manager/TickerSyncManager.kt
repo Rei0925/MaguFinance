@@ -1,7 +1,7 @@
-package com.github.rei0925.manager
+package com.github.rei0925.magufinance.manager
 
-import com.github.rei0925.RealTimeChart4
-import com.github.rei0925.UnifiedTicker
+import com.github.rei0925.magufinance.RealTimeChart4
+import com.github.rei0925.magufinance.UnifiedTicker
 import javax.swing.Timer
 
 object TickerSyncManager {

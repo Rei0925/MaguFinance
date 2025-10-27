@@ -1,7 +1,7 @@
-package com.github.rei0925
+package com.github.rei0925.magufinance
 
-import com.github.rei0925.manager.CompanyManager
-import com.github.rei0925.manager.HistoryManager
+import com.github.rei0925.magufinance.manager.CompanyManager
+import com.github.rei0925.magufinance.manager.HistoryManager
 import org.knowm.xchart.XYChart
 import org.knowm.xchart.XYChartBuilder
 import org.knowm.xchart.style.markers.SeriesMarkers

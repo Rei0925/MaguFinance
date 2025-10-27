@@ -1,9 +1,9 @@
-package com.github.rei0925
+package com.github.rei0925.magufinance
 
-import com.github.rei0925.command.MaintenanceStatus
-import com.github.rei0925.manager.BankManager
-import com.github.rei0925.manager.CompanyManager
-import com.github.rei0925.manager.HistoryManager
+import com.github.rei0925.magufinance.command.MaintenanceStatus
+import com.github.rei0925.magufinance.manager.BankManager
+import com.github.rei0925.magufinance.manager.CompanyManager
+import com.github.rei0925.magufinance.manager.HistoryManager
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
@@ -34,7 +34,7 @@ class ButtonListener(
                 val embed = EmbedBuilder()
                     .setTitle("新規口座を開設しました")
                     .addField("口座ID", user.id, true)
-                    .addField("所持金", "¥${com.github.rei0925.bankManager.getBalance(user.idLong)}" , true)
+                    .addField("所持金", "¥${com.github.rei0925.magufinance.bankManager.getBalance(user.idLong)}" , true)
                     .setColor(Color.BLUE)
                     .setFooter("MaguFinance")
                     .setTimestamp(java.time.OffsetDateTime.now())

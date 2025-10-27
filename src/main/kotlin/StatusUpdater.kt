@@ -1,6 +1,6 @@
-package com.github.rei0925
+package com.github.rei0925.magufinance
 
-import com.github.rei0925.manager.CompanyManager
+import com.github.rei0925.magufinance.manager.CompanyManager
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.Activity
 import kotlin.concurrent.fixedRateTimer

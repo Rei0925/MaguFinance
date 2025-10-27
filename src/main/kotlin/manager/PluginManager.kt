@@ -1,7 +1,7 @@
-package com.github.rei0925.manager
+package com.github.rei0925.magufinance.manager
 
-import com.github.rei0925.api.FinanceAPI
-import com.github.rei0925.api.FinancePlugin
+import com.github.rei0925.magufinance.api.FinanceAPI
+import com.github.rei0925.magufinance.api.FinancePlugin
 import java.io.File
 import java.net.URLClassLoader
 import java.util.jar.JarFile
@@ -33,23 +33,29 @@ class PluginManager(private val api: FinanceAPI) {
             return
         }
 
-        pluginDir.listFiles { file -> file.extension == "jar" }?.forEach { jarFile ->
+        pluginDir.listFiles { it.extension == "jar" }?.forEach { jarFile ->
             try {
                 val loader = URLClassLoader(arrayOf(jarFile.toURI().toURL()), this::class.java.classLoader)
                 val jar = JarFile(jarFile)
-                val entry = jar.manifest.mainAttributes.getValue("Main-Class")
-                if (entry != null) {
-                    val clazz = loader.loadClass(entry)
+                val entries = jar.entries().toList().filter { it.name.endsWith(".class") }
+
+                var loaded = false
+                for (entry in entries) {
+                    val className = entry.name.removeSuffix(".class").replace('/', '.')
+                    val clazz = loader.loadClass(className)
                     val instance = clazz.getDeclaredConstructor().newInstance()
                     if (instance is FinancePlugin) {
                         load(instance)
                         println("Loaded plugin: ${clazz.simpleName}")
-                    } else {
-                        println("Skipped ${jarFile.name}: Main-Class is not a FinancePlugin.")
+                        loaded = true
+                        break
                     }
-                } else {
-                    println("Skipped ${jarFile.name}: No Main-Class in manifest.")
                 }
+
+                if (!loaded) {
+                    println("Skipped ${jarFile.name}: No FinancePlugin implementation found.")
+                }
+
             } catch (e: Exception) {
                 println("Failed to load plugin ${jarFile.name}: ${e.message}")
             }

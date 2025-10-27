@@ -1,4 +1,4 @@
-package com.github.rei0925.command
+package com.github.rei0925.magufinance.command
 
 import com.github.rei0925.kotlincli.commands.*
 @CommandAlias("co")

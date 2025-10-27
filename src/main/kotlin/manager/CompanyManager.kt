@@ -1,4 +1,4 @@
-package com.github.rei0925.manager
+package com.github.rei0925.magufinance.manager
 
 import org.slf4j.LoggerFactory
 import java.sql.Connection

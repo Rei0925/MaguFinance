@@ -1,10 +1,10 @@
 @file:Suppress("unused")
 
-package com.github.rei0925.command
+package com.github.rei0925.magufinance.command
 
-import net.dv8tion.jda.api.entities.Activity
-import com.github.rei0925.*
 import com.github.rei0925.kotlincli.commands.*
+import net.dv8tion.jda.api.entities.Activity
+import com.github.rei0925.magufinance.*
 
 @CommandAlias("reload")
 class ReloadCommand(private val ctx: CommandContext) : BaseCommand() {
