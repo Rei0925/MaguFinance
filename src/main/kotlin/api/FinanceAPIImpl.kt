@@ -1,12 +1,7 @@
 package com.github.rei0925.magufinance.api
 
 import com.github.rei0925.magufinance.DBManager
-import com.github.rei0925.magufinance.api.FinanceAPI
-import com.github.rei0925.magufinance.manager.BankManager
-import com.github.rei0925.magufinance.manager.CompanyManager
-import com.github.rei0925.magufinance.manager.HistoryManager
-import com.github.rei0925.magufinance.manager.MarketManager
-import com.github.rei0925.magufinance.manager.NewsManager
+import com.github.rei0925.magufinance.manager.*
 import net.dv8tion.jda.api.JDA
 
 class FinanceAPIImpl(
@@ -18,6 +13,10 @@ class FinanceAPIImpl(
     private val newsManager: NewsManager,
     private val bankManager: BankManager
 ) : FinanceAPI {
+
+    init {
+        FinanceAPI.setInstance(this) // 自動的にインスタンスをセット
+    }
 
     override fun getJda(): JDA = jda
     override fun getDbManager(): DBManager = dbManager
