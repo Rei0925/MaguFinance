@@ -1,4 +1,4 @@
-package com.github.rei0925
+package com.github.rei0925.manager
 
 import java.sql.Connection
 import kotlin.random.Random

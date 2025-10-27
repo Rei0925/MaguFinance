@@ -1,5 +1,7 @@
-package com.github.rei0925
+package com.github.rei0925.manager
 
+import com.github.rei0925.RealTimeChart4
+import com.github.rei0925.UnifiedTicker
 import javax.swing.Timer
 
 object TickerSyncManager {

@@ -1,9 +1,6 @@
-package com.github.rei0925
+package com.github.rei0925.manager
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.json.Json
-import java.io.File
 import java.sql.Connection
 
 @Serializable

@@ -1,5 +1,10 @@
 package com.github.rei0925
 
+import com.github.rei0925.manager.CompanyManager
+import com.github.rei0925.manager.HistoryManager
+import com.github.rei0925.manager.News
+import com.github.rei0925.manager.NewsManager
+import com.github.rei0925.manager.TickerSyncManager
 import java.awt.*
 import javax.swing.JFrame
 import javax.swing.JPanel

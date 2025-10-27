@@ -1,5 +1,6 @@
 package com.github.rei0925.command
 
+import com.github.rei0925.kotlincli.commands.*
 @CommandAlias("co")
 class CompanyCommand(private val ctx: CommandContext) : BaseCommand() {
 

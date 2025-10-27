@@ -1,11 +1,13 @@
-package com.github.rei0925
+package com.github.rei0925.manager
 
+import org.slf4j.LoggerFactory
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import kotlin.random.Random
 
 data class Company(
+    val id: Int, // 会社ID
     val name: String,
     var stockPrice: Double,
     val totalStocks: Int,
@@ -17,12 +19,15 @@ class CompanyManager(
 ) {
     val companyList = mutableListOf<Company>()
 
+    private val logger = LoggerFactory.getLogger(CompanyManager::class.java)
+
     init {
         // テーブルがなければ作成
         val stmt = connection.createStatement()
         stmt.executeUpdate("""
             CREATE TABLE IF NOT EXISTS companies (
-                name VARCHAR(255) PRIMARY KEY,
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL UNIQUE,
                 stockPrice DOUBLE NOT NULL,
                 totalStocks INT NOT NULL,
                 availableStocks INT NOT NULL
@@ -36,9 +41,10 @@ class CompanyManager(
     fun loadCompanies() {
         companyList.clear()
         val stmt = connection.createStatement()
-        val rs: ResultSet = stmt.executeQuery("SELECT name, stockPrice, totalStocks, availableStocks FROM companies")
+        val rs: ResultSet = stmt.executeQuery("SELECT id, name, stockPrice, totalStocks, availableStocks FROM companies")
         while (rs.next()) {
             val company = Company(
+                id = rs.getInt("id"),
                 name = rs.getString("name"),
                 stockPrice = rs.getDouble("stockPrice"),
                 totalStocks = rs.getInt("totalStocks"),
@@ -56,19 +62,21 @@ class CompanyManager(
 
     fun save() {
         val sql = """
-            INSERT INTO companies (name, stockPrice, totalStocks, availableStocks) 
-            VALUES (?, ?, ?, ?)
+            INSERT INTO companies (id, name, stockPrice, totalStocks, availableStocks) 
+            VALUES (?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE 
+                name = VALUES(name),
                 stockPrice = VALUES(stockPrice), 
                 totalStocks = VALUES(totalStocks),
                 availableStocks = VALUES(availableStocks)
         """.trimIndent()
         val pstmt: PreparedStatement = connection.prepareStatement(sql)
         for (company in companyList) {
-            pstmt.setString(1, company.name)
-            pstmt.setDouble(2, company.stockPrice)
-            pstmt.setInt(3, company.totalStocks)
-            pstmt.setInt(4, company.availableStocks)
+            pstmt.setInt(1, company.id)
+            pstmt.setString(2, company.name)
+            pstmt.setDouble(3, company.stockPrice)
+            pstmt.setInt(4, company.totalStocks)
+            pstmt.setInt(5, company.availableStocks)
             pstmt.addBatch()
         }
         pstmt.executeBatch()
@@ -76,10 +84,11 @@ class CompanyManager(
     }
 
     fun createCompany(name: String, stockPrice: Double, totalStocks: Int) {
-        val newCompany = Company(name, stockPrice, totalStocks, totalStocks)
+        val newId = (companyList.maxOfOrNull { it.id } ?: 0) + 1
+        val newCompany = Company(newId, name, stockPrice, totalStocks, totalStocks)
         companyList.add(newCompany)
         save()
-        println("会社 $name を作成しました！")
+        logger.info("会社 $name (ID: $newId) を作成しました！")
     }
 
     fun showCompanies() {
@@ -89,12 +98,26 @@ class CompanyManager(
         }
         println("現在の会社一覧:")
         for (company in companyList) {
-            println("会社名: ${company.name}, 株価: ${company.stockPrice}, 総株数: ${company.totalStocks}, 利用可能株数: ${company.availableStocks}")
+            println("会社ID: ${company.id}, 会社名: ${company.name}, 株価: ${company.stockPrice}, 総株数: ${company.totalStocks}, 利用可能株数: ${company.availableStocks}")
         }
     }
 
     fun getCompanies(): List<Company> {
+        loadCompanies() // DBから最新情報を読み込む
         return companyList.toList()
+    }
+
+    fun checkCompany(companyName: String) : Boolean{
+        val company = companyList.find { it.name == companyName }
+        return company != null
+    }
+
+    fun getCompany(companyName: String) : Company? {
+        return companyList.find { it.name == companyName }
+    }
+
+    fun getCompanyById(id: Int): Company? {
+        return companyList.find { it.id == id }
     }
 
     fun buyStock(companyName: String, qty: Int): Boolean {
@@ -111,10 +134,10 @@ class CompanyManager(
             company.availableStocks -= qty
             updateStockPrices(company, qty)
             save()
-            println("会社 $companyName の株を $qty 株購入しました。残りの株数: ${company.availableStocks}")
+            logger.info("会社 $companyName の株を $qty 株購入しました。残りの株数: ${company.availableStocks}")
             return true
         } else {
-            println("会社 $companyName の株の在庫が不足しています。現在の残株数: ${company.availableStocks}")
+            logger.info("会社 $companyName の株の在庫が不足しています。現在の残株数: ${company.availableStocks}")
             return false
         }
     }
@@ -135,7 +158,7 @@ class CompanyManager(
         }
         updateStockPrices(company, -qty)
         save()
-        println("会社 $companyName の株を $qty 株売却しました。現在の利用可能株数: ${company.availableStocks}")
+        logger.info("会社 $companyName の株を $qty 株売却しました。現在の利用可能株数: ${company.availableStocks}")
         return true
     }
 
@@ -148,34 +171,26 @@ class CompanyManager(
         val newPrice = company.stockPrice * (1 + percentageChange)
         company.stockPrice = newPrice.coerceAtLeast(1.0).toInt().toDouble()
         save()
-        println("会社 $companyName の株価が変更されました。新しい株価: ${company.stockPrice}")
+        logger.info("会社 $companyName の株価が変更されました。新しい株価: ${company.stockPrice}")
     }
 
     private fun updateStockPrices(company: Company, changeInAvailableStocks: Int = 0) {
         if (company.totalStocks <= 0) return
 
-        // Scarcity effect: fewer available stocks -> higher price
         val scarcityRatio = (company.totalStocks - company.availableStocks).toDouble() / company.totalStocks
-        var scarcityMultiplier = 1.0 + scarcityRatio * 0.01  // 最大5%上昇まで
+        var scarcityMultiplier = 1.0 + scarcityRatio * 0.01
 
-        // Demand/Supply effect: positive for buy, negative for sale
         val demandSupplyEffect = if (changeInAvailableStocks >= 0) {
-            // Buying: price goes up slightly
             1.0 + (changeInAvailableStocks.toDouble() / company.totalStocks) * 0.1
         } else {
-            // Selling: price goes down slightly
             1.0 + (changeInAvailableStocks.toDouble() / company.totalStocks) * -0.1
         }
         scarcityMultiplier *= demandSupplyEffect
 
-        // Random market noise: ±5%
         val marketNoise = Random.nextDouble(0.95, 1.05)
-
-        // Small trend: slight drift based on previous price
         val trend = 1.0 + Random.nextDouble(-0.01, 0.01)
 
         val newPrice = company.stockPrice * scarcityMultiplier * marketNoise * trend
-
         company.stockPrice = newPrice.coerceAtLeast(1.0).toInt().toDouble()
     }
 
@@ -190,5 +205,6 @@ class CompanyManager(
         val percent = Random.nextDouble(-0.02, 0.02)
         company.stockPrice = (company.stockPrice * (1 + percent)).coerceAtLeast(1.0).toInt().toDouble()
         save()
+        logger.info("株価を更新しました")
     }
 }

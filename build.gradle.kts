@@ -12,6 +12,7 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    maven("https://jitpack.io")
 }
 
 dependencies {
@@ -28,7 +29,9 @@ dependencies {
     implementation("org.knowm.xchart:xchart:3.8.6")
 
     // ログ（JDAがSLF4J依存してる）
-    implementation("org.slf4j:slf4j-simple:2.0.7")
+    implementation("org.slf4j:slf4j-simple:2.0.9")
+    implementation("org.slf4j:slf4j-api:2.0.9")
+    runtimeOnly("ch.qos.logback:logback-classic:1.5.13")
 
     // kapt用（必要な場合）
     kapt("com.google.dagger:dagger-compiler:2.48") // 例: Dagger使う場合
@@ -44,6 +47,8 @@ dependencies {
 
     implementation("org.reflections:reflections:0.10.2")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+    //KotlinCLI
+    implementation("com.github.Rei0925:KotlinCLI:1.0.3")
 }
 
 application {

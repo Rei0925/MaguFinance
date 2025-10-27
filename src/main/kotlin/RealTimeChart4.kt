@@ -1,5 +1,10 @@
 package com.github.rei0925
 
+import com.github.rei0925.manager.CompanyManager
+import com.github.rei0925.manager.HistoryManager
+import com.github.rei0925.manager.News
+import com.github.rei0925.manager.NewsManager
+import com.github.rei0925.manager.TickerSyncManager
 import org.knowm.xchart.XChartPanel
 import org.knowm.xchart.XYChart
 import org.knowm.xchart.XYChartBuilder
@@ -355,7 +360,7 @@ class RealTimeChart4(
     companion object {
         private var instance: RealTimeChart4? = null
 
-        fun start(companyManager: CompanyManager,historyManager: HistoryManager,newsManager: NewsManager) {
+        fun start(companyManager: CompanyManager, historyManager: HistoryManager, newsManager: NewsManager) {
             if (instance == null) {
                 instance = RealTimeChart4(companyManager,historyManager,newsManager)
                 instance?.start()

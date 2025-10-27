@@ -4,12 +4,15 @@ package com.github.rei0925.command
 
 import net.dv8tion.jda.api.entities.Activity
 import com.github.rei0925.*
+import com.github.rei0925.kotlincli.commands.*
 
 @CommandAlias("reload")
 class ReloadCommand(private val ctx: CommandContext) : BaseCommand() {
+    @Default
     fun execute(args: List<String>) {
         ctx.jda.presence.activity = Activity.playing("MaguFinance｜再起動中")
         ctx.companyManager.reloadCompanies()
+        ctx.statusUpdater.restart()
         println("情報を再読み込みしました")
     }
 }
@@ -61,6 +64,7 @@ class TickerCommand(private val ctx: CommandContext) : BaseCommand() {
 
 @CommandAlias("button")
 class ButtonCommand(private val ctx: CommandContext) : BaseCommand() {
+    @Default
     fun execute(args: List<String>) {
         print("チャンネルID: ")
         val idInput = ctx.reader.readLine()?.trim() ?: return

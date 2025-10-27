@@ -1,6 +1,7 @@
 package com.github.rei0925
 
 import io.github.cdimascio.dotenv.dotenv
+import org.slf4j.LoggerFactory
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
@@ -14,13 +15,15 @@ class DBManager() {
 
     private var connection: Connection? = null
 
+    private val logger = LoggerFactory.getLogger(DBManager::class.java)
+
     fun connect(): Connection {
         if (connection == null || connection!!.isClosed) {
             try {
                 connection = DriverManager.getConnection(url, user, password)
-                println("DB接続成功")
+                logger.info("DB接続成功")
             } catch (e: SQLException) {
-                println("DB接続エラー: ${e.message}")
+                logger.error("DB接続エラー: ${e.message}")
                 throw e
             }
         }
@@ -30,9 +33,9 @@ class DBManager() {
     fun disconnect() {
         try {
             connection?.close()
-            println("DB切断完了")
+            logger.info("DB切断完了")
         } catch (e: SQLException) {
-            println("DB切断エラー: ${e.message}")
+            logger.error("DB切断エラー: ${e.message}")
         } finally {
             connection = null
         }

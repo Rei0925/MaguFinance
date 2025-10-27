@@ -1,5 +1,7 @@
 package com.github.rei0925
 
+import com.github.rei0925.manager.CompanyManager
+import com.github.rei0925.manager.HistoryManager
 import org.knowm.xchart.XYChart
 import org.knowm.xchart.XYChartBuilder
 import org.knowm.xchart.style.markers.SeriesMarkers
@@ -86,7 +88,7 @@ class RealTimeChart(
     companion object {
         private var instance: RealTimeChart? = null
 
-        fun start(companyManager: CompanyManager,historyManager: HistoryManager) {
+        fun start(companyManager: CompanyManager, historyManager: HistoryManager) {
             instance = RealTimeChart(companyManager,historyManager)
         }
 
