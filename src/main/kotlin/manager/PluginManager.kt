@@ -7,7 +7,7 @@ import java.net.URLClassLoader
 import java.util.jar.JarFile
 
 class PluginManager(private val api: FinanceAPI) {
-    private val plugins = mutableListOf<FinancePlugin>()
+    val plugins = mutableListOf<FinancePlugin>()
 
     fun load(plugin: FinancePlugin) {
         plugin.onEnable(api)

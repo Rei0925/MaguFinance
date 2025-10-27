@@ -76,3 +76,11 @@ class ButtonCommand(private val ctx: CommandContext) : BaseCommand() {
         ctx.broadCast.setButton(id)
     }
 }
+
+@CommandAlias("plugin")
+class OnPlugin(private val ctx: CommandContext) : BaseCommand(){
+    @Default
+    fun plugin(){
+        logger.info("Loaded plugins: ${ctx.pluginManager.plugins.joinToString(", ")}")
+    }
+}
