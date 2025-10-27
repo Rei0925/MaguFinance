@@ -21,7 +21,7 @@ interface FinanceAPI {
             return instance ?: throw IllegalStateException("FinanceAPI is not initialized")
         }
 
-        internal fun setInstance(api: FinanceAPI) {
+        fun setInstance(api: FinanceAPI) {
             instance = api
         }
     }
