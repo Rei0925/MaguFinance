@@ -35,7 +35,7 @@ class PluginManager(private val api: FinanceAPI) {
 
         pluginDir.listFiles { it.extension == "jar" }?.forEach { jarFile ->
             try {
-                val loader = URLClassLoader(arrayOf(jarFile.toURI().toURL()), PluginManager::class.java.classLoader)
+                val loader = URLClassLoader(arrayOf(jarFile.toURI().toURL()), this::class.java.classLoader)
                 val yamlStream = loader.getResourceAsStream("plugin.yml")
 
                 if (yamlStream == null) {
