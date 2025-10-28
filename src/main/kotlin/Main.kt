@@ -165,6 +165,7 @@ fun main() {
     manager.registerCommand(Realtime4Command(commandContext))
     manager.registerCommand(TickerCommand(commandContext))
     manager.registerCommand(ButtonCommand(commandContext))
+    manager.registerCommand(OnPlugin(commandContext))
     manager.startInteractive()
 
     statusCh.manager.setName("Status:稼働中").queue()
