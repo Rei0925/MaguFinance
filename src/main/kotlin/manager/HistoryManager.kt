@@ -49,7 +49,8 @@ class HistoryManager(
             VALUES (?, ?, ?, ?, ?, ?)
         """.trimIndent()
         val pstmt: PreparedStatement = connection.prepareStatement(sql)
-        companyManager.companyList.forEach { company ->
+        val snapshot = companyManager.companyList.toList()
+        snapshot.forEach { company ->
             pstmt.setLong(1, now)
             pstmt.setString(2, company.name)
             pstmt.setDouble(3, company.stockPrice)

@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MaguFinance Plugin Definition",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "プラグインの名前"
+    },
+    "main": {
+      "type": "string",
+      "description": "エントリポイントとなるクラスの完全修飾名"
+    },
+    "version": {
+      "type": "string",
+      "description": "プラグインのバージョン"
+    },
+    "description": {
+      "type": "string",
+      "description": "プラグインの説明（任意）"
+    },
+    "author": {
+      "type": "string",
+      "description": "作成者名（任意）"
+    }
+  },
+  "required": ["name", "main", "version"]
+}

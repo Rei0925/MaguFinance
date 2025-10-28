@@ -80,7 +80,7 @@ class ButtonCommand(private val ctx: CommandContext) : BaseCommand() {
 @CommandAlias("plugin")
 class OnPlugin(private val ctx: CommandContext) : BaseCommand(){
     @Default
-    fun plugin(){
+    fun plugin(args: List<String>){
         logger.info("Loaded plugins: ${ctx.pluginManager.plugins.joinToString(", ")}")
     }
 }

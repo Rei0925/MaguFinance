@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.github.rei0925.magufinance"
-version = "1.0.2"
+version = "1.0.4"
 
 repositories {
     mavenCentral()
@@ -49,6 +49,8 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     //KotlinCLI
     implementation("com.github.Rei0925:KotlinCLI:1.0.3")
+    //yml
+    implementation("org.yaml:snakeyaml:2.2")
 }
 
 application {
